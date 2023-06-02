@@ -8,7 +8,7 @@ import { getLogger } from "../logger";
 import { Card } from "../models/Card";
 import { MarkdownFile } from "../models/MarkdownFile";
 import { Media } from "../models/Media";
-import { isRemoteLink } from "../utils";
+import { isRemoteLink, uniqueArray } from "../utils";
 import { CardParser } from "./parsers/cardParser";
 
 export const enum DeckNameStrategy {
@@ -44,10 +44,19 @@ export class Serializer {
     return workspace.getConfiguration("anki.md").get(conf);
   }
 
+  private parseTags(content: string) {
+    const tagsReg = /([\s]+|^)#\w+/g;
+    const tags: string[] = content.match(tagsReg)?.map(v => v.replace(/[#\s]/g, '')) || [];
+    const newContent = tags?.reduce((text, tag) => text.replace(new RegExp(`#${tag}`, "g"), ""), content);
+    return { tags, content: newContent };
+  }
+
   private async splitByCards(mdString: string): Promise<ParsedData> {
-    let rawCards = mdString
+    const {tags, content: newMDString} = this.parseTags(mdString);
+    let rawCards = newMDString
       .split(new RegExp(this.getConfig("card.separator") as string, "m"))
-      .map((line) => line.trim());
+      .map((line) => line.trim())
+      .filter(Boolean);
 
     const deckName = this.deckName(rawCards);
     const noteType = this.context.config.noteType;
@@ -63,6 +72,12 @@ export class Serializer {
     rawCards = rawCards.filter((str) => str.search(this.getConfig("deck.titleSeparator") as string) === -1);
 
     const parsedCards = await Promise.all(rawCards.map((str) => new CardParser({ convertMath, noteType }).parse(str)));
+
+    // 添加全局标签
+    parsedCards.forEach(card => {
+      card.tags = uniqueArray([...card.tags, ...tags]);
+    });
+
     const cards = parsedCards
       // card should have at least a front side
       // Cloze cards don't need an answer side

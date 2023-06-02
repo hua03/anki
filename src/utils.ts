@@ -48,3 +48,14 @@ export const trimArray = (array: any[]) => trimArrayEnd(trimArrayStart(array));
  * @param link
  */
 export const isRemoteLink = (link: string) => /^(https?)?:\/\//.test(link);
+
+/**
+ * 数组去重
+ * @param array
+ * @returns
+ */
+export function uniqueArray<T>(array:T[]){
+  return array.filter((value, index, self) => {
+    return self.indexOf(value) === index;
+  });
+}
