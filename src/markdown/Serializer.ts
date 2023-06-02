@@ -46,7 +46,7 @@ export class Serializer {
 
   private parseTags(content: string) {
     const tagsReg = /([\s]+|^)#\w+/g;
-    const tags: string[] = content.match(tagsReg)?.map(v => v.replace(/[#\s]/g, '')) || [];
+    const tags: string[] = content.match(tagsReg)?.map(v => v.replace(/[#\s]/g, '')).reverse() || [];
     const newContent = tags?.reduce((text, tag) => text.replace(new RegExp(`#${tag}`, "g"), ""), content);
     return { tags, content: newContent };
   }
