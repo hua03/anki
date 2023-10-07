@@ -2,6 +2,7 @@ import { Card } from "./Card";
 import { AnkiService } from "../AnkiService";
 import { SendDiff } from "./SendDiff";
 import { workspace } from "vscode";
+import { asyncPool } from "../utils";
 
 export class Deck {
   public readonly name: string;
@@ -113,7 +114,8 @@ export class Deck {
 
   // Calls anki to update the fields of all the passed cards.
   private async _pushUpdatedCardsToAnki(cards: Card[]): Promise<Card[]> {
-    return Promise.all(cards.map((card) => this.ankiService?.updateFields(card)));
+    return asyncPool(6, cards, (card: Card) => this.ankiService?.updateFields(card));
+    // return Promise.all(cards.map((card) => this.ankiService?.updateFields(card)));
   }
 
   async createAndUpdateCards(): Promise<Card[]> {

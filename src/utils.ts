@@ -54,8 +54,25 @@ export const isRemoteLink = (link: string) => /^(https?)?:\/\//.test(link);
  * @param array
  * @returns
  */
-export function uniqueArray<T>(array:T[]){
+export function uniqueArray<T>(array: T[]) {
   return array.filter((value, index, self) => {
     return self.indexOf(value) === index;
   });
+}
+
+export async function asyncPool(poolLimit: number, array: unknown[], iteratorFn: any) {
+  const ret = [];
+  const executing: Promise<unknown>[] = [];
+  for (const item of array) {
+    const p = Promise.resolve().then(() => iteratorFn(item));
+    ret.push(p);
+    if (poolLimit <= array.length) {
+      const e: Promise<unknown> = p.then(() => executing.splice(executing.indexOf(e), 1));
+      executing.push(e);
+      if (executing.length >= poolLimit) {
+        await Promise.race(executing);
+      }
+    }
+  }
+  return Promise.all(ret);
 }
